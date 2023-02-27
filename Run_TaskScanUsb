@@ -1,0 +1,47 @@
+#!/bin/bash
+
+#Скрипт запускается демоном InitTaskScanUsb.service
+ArrDevScaned=(false false false false)
+CountDev=0
+CountDev_OLD=0
+
+#Постоянная проверка на наличие новых USB-устройств с
+#с интервалом 5 секунд
+while true; do
+sleep 5
+ArrDevName=(`sudo lsblk -l | awk '{print ($1, $7)}' | egrep -o '^sd[b-z]([0-9])?\s/.*/?\w*(/by-uuid-.*)?'| awk '{print $1}'`)
+ArrPointMount=(`sudo lsblk -l | awk '{print ($1, $7)}' | egrep -o '^sd[b-z]([0-9])?\s/.*/?\w*(/by-uuid-.*)?'| awk '{print $2}'`)
+CountDev=${#ArrDevName[@]}
+
+#Если установили новый девайс
+if [ "$CountDev" -gt "$CountDev_OLD" ];
+then
+CountDev_OLD=$CountDev
+echo "CountDev is changed!"
+
+#Перебираем точки монтирования
+for index in ${!ArrPointMount[*]}
+do
+echo $index "PointMount ="${ArrPointMount[$index]}
+
+#Если точка монтирования не проверена
+if [ "${ArrDevScaned[$index]}" == "false" ];
+then
+echo ${ArrPointMount[$index]} " is_Scan = "${ArrDevScaned[$index]}" Run tmp task Kesl"
+kesl-control --scan-file ${ArrPointMount[$index]}
+echo ${ArrPointMount[$index]} " scan is completed!!!"
+ArrDevScaned[$index]="true"
+fi
+done
+
+#Если USB размонтировали или выдернули - обновляем список проверенных USB
+elif [ "$CountDev" -lt "$CountDev_OLD" ];
+then
+CountDev_OLD=$CountDev
+ArrDevScaned=(false false false false)
+for (( index=0; index<$CountDev; index++ ));
+do
+ArrDevScaned[index]="true"
+done
+fi
+done

@@ -1,0 +1,14 @@
+[Unit]
+Description=Init USB scan task kesl
+Requires=kesl-supervisor.service
+
+[Service]
+ExecStart=/opt/kaspersky/Run_TaskScanUsb
+RemainAfterExit=true
+Type=oneshot
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target
+Alias=InitTaskScanUsb.service
